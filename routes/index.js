@@ -1,13 +1,13 @@
 /**
  * Created by tangyitangyi on 2017/7/31.
  */
-var express = require('express');
-var XLSX = require('xlsx');
-var nodeExcel = require('excel-export');
-var path = require('path');
-var _ = require('lodash');
-var fs = require('fs');
-var router = express.Router();
+const express = require('express');
+const XLSX = require('xlsx');
+const nodeExcel = require('excel-export');
+const path = require('path');
+const _ = require('lodash');
+const fs = require('fs');
+const router = express.Router();
 
 function to_json(workbook) {
     var result = {};
@@ -26,88 +26,138 @@ function to_json(workbook) {
  * @param data
  */
 const writeExcel = (data) => {
-    var conf = {};
+/*    console.log(data);*/
+    const conf = {};
+    const fileName = 'rencaiku';
+
     conf.name = "aspnetcore";
     conf.cols = [
         {
             caption: '公司(Company)',
-            type: 'string'
+            type: 'string',
+            width:40
         },
         {
             caption: '行业(Industry)',
-            type: 'string'
+            type: 'string',
+            width:20
         },
         {
             caption: '姓名(Name)',
-            type: 'string'
+            type: 'string',
+            width:20
         },
         {
             caption: '手机(Mobile)',
-            type: 'string'
+            type: 'string',
+            width:20
         },
         {
             caption: '性别(Sex)',
-            type: 'string'
+            type: 'string',
+            width:20
         },
         {
             caption: '部门(Department)',
-            type: 'string'
+            type: 'string',
+            width:20
         },
         {
             caption: '职务(JobTitle)',
-            type: 'string'
+            type: 'string',
+            width:20
         },
         {
             caption: '座机(Telephone)',
-            type: 'string'
+            type: 'string',
+            width:20
         },
         {
             caption: '电子邮件(Email)',
-            type: 'string'
+            type: 'string',
+            width:20
         },
         {
             caption: '办公地点(OfficeAddress)',
-            type: 'string'
+            type: 'string',
+            width:200
         },
         {
             caption: '标签(Tag)',
-            type: 'string'
+            type: 'string',
+            width:20
         },
         {
             caption: '来源(Source)',
-            type: 'string'
-        }];
-
-    conf.rows = [
-        ['1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1']
+            type: 'string',
+            width:20
+        }
     ];
 
-    /*    _.filter(data, function (item) {
+    conf.rows = [
+/*        ['1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1']*/
+    ];
+    _.filter(data, function (item, index) {
+        var arr01 = [];
+        var newObj = {};
+        _.map(item, function (obj, clunm) {
+            newObj[clunm.replace(/(^\s+)|(\s+$)/g,"").replace(/\s/g,"")] = obj.replace(/(^\s+)|(\s+$)/g,"").replace(/\s/g,"");
+        });
+        
+        if(!_.isEmpty(newObj) && newObj['公司名称'].replace(/(^\s+)|(\s+$)/g,"").replace(/\s/g,"")!=='') {
+            arr01[0] = newObj['公司名称'];
+            arr01[1] = newObj['经营模式'];
+            arr01[2] = newObj['联系人'];
+            arr01[3] = newObj['移动电话'];
+            arr01[4] = newObj['联系人'].indexOf('先生') > -1 ? '男' : '女';
+            arr01[5] = '';
+            arr01[6] = '';
+            arr01[7] = newObj['电话'];
+            arr01[8] = '';
+            arr01[9] = newObj['地址'];
+            arr01[10] = '';
+            arr01[11] = '';
+            conf.rows.push(arr01);
+            if (index + 1 == 12) {
+                arr01 = [];
+                newObj = {};
+            }
+        }
+     });
 
-     });*/
+    const result = nodeExcel.execute(conf);
 
-    var result = nodeExcel.execute(conf);
+    const random = Math.floor(Math.random() * 10000 + 0);
 
-    var random = Math.floor(Math.random() * 10000 + 0);
-
-    var uploadDir = path.join(__dirname, '../writeExcel') + '/';
-    var filePath = uploadDir + random + ".xlsx";
+    const uploadDir = path.join(__dirname, '../writeExcel') + '/';
+    const filePath = uploadDir + fileName + '_' + random + ".xlsx";
 
     fs.writeFile(filePath, result, 'binary', function (err) {
         if (err) {
             console.log(err);
         }
+
     });
 }
 
 const read = (req, res, next) => {
 
-    var workbook = XLSX.readFile(path.join(__dirname, '../readExcel') + '/test.xlsx');
-    console.log(to_json(workbook));
-    writeExcel({});
+    const workbook = XLSX.readFile(path.join(__dirname, '../readExcel') + '/test.xls');
+    console.time("writeExcel");
+    writeExcel(to_json(workbook)['1']);
+    console.timeEnd("writeExcel");
     res.render('toJson.html', {data: to_json(workbook)});
 
 };
+
+function foo(){
+    var x = 4.237;
+    var y = 0;
+    for (var i=0; i<100000000; i++) {
+        y = y + x*x;
+    }
+    return y;
+}
 
 router.get('/', function (req, res, next) {
     read(req, res, next);
