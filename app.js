@@ -8,6 +8,7 @@ var cookieParser = require('cookie-parser');
 var engine = require('express-dot-engine');
 var session = require('express-session');
 var uuid = require('uuid');
+var dot = require('dot');
 var requireDir = require('require-dir');
 var fs = require('fs');
 
@@ -28,6 +29,6 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes.index);
-
+app.use('/export', routes.index);
 
 module.exports = app;

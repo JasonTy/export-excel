@@ -7,6 +7,7 @@ const nodeExcel = require('excel-export');
 const path = require('path');
 const _ = require('lodash');
 const fs = require('fs');
+const async = require('async');
 const router = express.Router();
 
 function to_json(workbook) {
@@ -25,10 +26,10 @@ function to_json(workbook) {
  * 导出excel
  * @param data
  */
-const writeExcel = (data) => {
+const writeExcel = (data, fileName) => {
 /*    console.log(data);*/
     const conf = {};
-    const fileName = 'rencaiku';
+    const fileNames = fileName;
 
     conf.name = "aspnetcore";
     conf.cols = [
@@ -104,19 +105,19 @@ const writeExcel = (data) => {
             newObj[clunm.replace(/(^\s+)|(\s+$)/g,"").replace(/\s/g,"")] = obj.replace(/(^\s+)|(\s+$)/g,"").replace(/\s/g,"");
         });
         
-        if(!_.isEmpty(newObj) && newObj['公司名称'].replace(/(^\s+)|(\s+$)/g,"").replace(/\s/g,"")!=='') {
-            arr01[0] = newObj['公司名称'];
-            arr01[1] = newObj['经营模式'];
+        if(!_.isEmpty(newObj) && newObj['公司名称'].replace(/(^\s+)|(\s+$)/g,"").replace(/\s/g,"")!=='' && newObj['移动电话'].replace(/(^\s+)|(\s+$)/g,"").replace(/\s/g,"")!=='') {
+            arr01[0] = "--";//newObj['公司名称'];
+            arr01[1] = "--";//newObj['经营模式'];
             arr01[2] = newObj['联系人'];
             arr01[3] = newObj['移动电话'];
             arr01[4] = newObj['联系人'].indexOf('先生') > -1 ? '男' : '女';
             arr01[5] = '';
             arr01[6] = '';
-            arr01[7] = newObj['电话'];
+            arr01[7] = '';//newObj['电话'];
             arr01[8] = '';
-            arr01[9] = newObj['地址'];
-            arr01[10] = '';
-            arr01[11] = '';
+            arr01[9] = '';//newObj['地址'];
+            arr01[10] = '直客';
+            arr01[11] = fileName.replace(/[\[\]]/g,'');
             conf.rows.push(arr01);
             if (index + 1 == 12) {
                 arr01 = [];
@@ -130,24 +131,38 @@ const writeExcel = (data) => {
     const random = Math.floor(Math.random() * 10000 + 0);
 
     const uploadDir = path.join(__dirname, '../writeExcel') + '/';
-    const filePath = uploadDir + fileName + '_' + random + ".xlsx";
+    const filePath = uploadDir + fileNames + '_' + random + ".xlsx";
 
     fs.writeFile(filePath, result, 'binary', function (err) {
         if (err) {
             console.log(err);
         }
-
     });
 }
 
 const read = (req, res, next) => {
 
-    const workbook = XLSX.readFile(path.join(__dirname, '../readExcel') + '/test.xls');
-    console.time("writeExcel");
-    writeExcel(to_json(workbook)['1']);
-    console.timeEnd("writeExcel");
-    res.render('toJson.html', {data: to_json(workbook)});
+    // 遍历readExcel 下的所有文件并导出
 
+    fs.readdir(path.join(__dirname, '../readExcel'), function (err, files) {
+        if(err){
+            return next(err);
+        }
+
+        async.eachLimit(files, 1, function (result, cb) {
+            if(result) {
+                const workbook = XLSX.readFile(path.join(__dirname, '../readExcel/') + result);
+                console.time("writeExcel");
+                writeExcel(to_json(workbook)['1'], result);
+                console.timeEnd("writeExcel");
+            }
+            cb();
+        }, function (err) {
+            
+        });
+
+        res.render('toJson.html', {data: '哈哈'});
+    });
 };
 
 function foo(){
@@ -162,5 +177,10 @@ function foo(){
 router.get('/', function (req, res, next) {
     read(req, res, next);
 });
+
+router.get('/export', function (req, res, next) {
+    res.render('toJson.html', {data: '哈哈'});
+});
+
 
 module.exports = router;
